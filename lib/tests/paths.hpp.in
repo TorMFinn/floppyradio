@@ -1,0 +1,7 @@
+#pragma once
+#include <boost/filesystem.hpp>
+
+namespace floppyradio::test {
+    const boost::filesystem::path module_path("@MODULE_PATH@");
+    const boost::filesystem::path module_path_bzip2("@MODULE_PATH_BZIP2@");
+}

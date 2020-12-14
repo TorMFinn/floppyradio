@@ -1,26 +1,18 @@
-include(FetchContent)
-include(ExternalProject)
+include(${CMAKE_CURRENT_LIST_DIR}/libopenmpt.cmake)
 
-FetchContent_Declare(
-  libopenmpt
-  URL https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.5.2+release.makefile.tar.gz
+find_package(Boost REQUIRED COMPONENTS
+  filesystem
   )
 
-FetchContent_GetProperties(libopenmpt)
-if(NOT libopenmpt_POPULATED)
-  message(STATUS "Downloading libopenmpt")
-  FetchContent_Populate(libopenmpt)
-  message(STATUS "Populated libopenmpt")
-  set(libopenmpt_LIBRARY ${libopenmpt_BINARY_DIR}/lib/libopenmpt.a)
-  set(libopenmpt_INCLUDE_DIR ${libopenmpt_BINARY_DIR}/include)
+#find_library(pulseaudio_LIBRARIES NAMES pulse pulse-simple REQUIRED)
+find_library(portaudio_LIBRARY NAMES portaudio REQUIRED)
+find_package(SDL2 REQUIRED)
 
-  message(STATUS "DIR: ${libopenmpt_BINARY_DIR}")
-  add_custom_target(build_libopenmpt
-    COMMAND make CONFIG=clang OPENMPT123=0 EXAMPLES=0 SHARED_LIB=0 TEST=0 PREFIX=${libopenmpt_BINARY_DIR}/ install
-    COMMENT "Building libopenmpt"
-    WORKING_DIRECTORY ${libopenmpt_SOURCE_DIR}
-    BYPRODUCTS ${libopenmpt_LIBRARY}
-    VERBATIM
-    )
-  
+find_package(BZip2 REQUIRED)
+
+add_subdirectory(ext/spdlog)
+
+if (FLOPPYRADIO_BUILD_TESTS)
+  message(STATUS "Enabled tests, looking for GTest")
+  find_package(GTest CONFIG REQUIRED)
 endif()

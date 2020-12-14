@@ -1,4 +1,4 @@
-#include "drive_poller.hpp"
+#include "floppyradio/drive_poller.hpp"
 
 #include <thread>
 #include <iostream>
@@ -15,6 +15,9 @@ struct drive_poller::Implementation {
     bool drive_mounted = false;
     boost::filesystem::path device_path;
     int fd = -1;
+
+    drive_mounted_callback mount_callback;
+    drive_mounted_callback umount_callback;
 
     Implementation() {}
 
@@ -56,14 +59,16 @@ struct drive_poller::Implementation {
                 std::cout << "Block size" << block_size << std::endl;
                 if (block_size > 0 && not drive_mounted) {
                     drive_mounted = mount_drive();
-                    if (drive_mounted) {
+                    if (drive_mounted && mount_callback) {
+                        mount_callback("/mnt/floppy");
                         // Callback
                         std::cout << "mounted drive" << std::endl;
                     }
                 } else if (block_size == 0 && drive_mounted) {
                     drive_mounted = !unmount_drive();
-                    if (!drive_mounted) {
+                    if (!drive_mounted && umount_callback) {
                         // Callback with empty path
+                        umount_callback("/mnt/floppy");
                         std::cout << "unmounted drive" << std::endl;
                     }
                 }
@@ -74,14 +79,14 @@ struct drive_poller::Implementation {
     }
 
     bool mount_drive() {
-        int result = boost::process::system(boost::process::search_path("mount"), "/dev/sdb", "/mnt/floppy");
+        int result = boost::process::system(boost::process::search_path("sudo"), "mount", "/dev/sdb", "/mnt/floppy");
         std::cout << "result of mount command: " << result << std::endl;
         return result == 0 || result == 32;
     }
 
     bool unmount_drive() {
-         int result = boost::process::system(boost::process::search_path("umount"), "/mnt/floppy");
-         std::cout << "result of umount command: " << result << std::endl;
+        int result = boost::process::system(boost::process::search_path("sudo"), "umount", "/mnt/floppy");
+        std::cout << "result of umount command: " << result << std::endl;
         return result == 0 || result == 32;
     }
 
@@ -113,4 +118,9 @@ void drive_poller::stop_polling() {
  * mounted and this callback is executed to inform the application.
  */
 void drive_poller::set_drive_mounted_callback(drive_mounted_callback callback) {
+    impl_->mount_callback = callback;
+}
+
+void drive_poller::set_drive_unmounted_callback(drive_mounted_callback callback) {
+    impl_->umount_callback = callback;
 }

@@ -1,0 +1,7 @@
+---
+Language:       Cpp
+BracketAlignmentStyle: Align
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false

@@ -1,21 +1,27 @@
 #pragma once
 #include <boost/filesystem.hpp>
 #include <boost/signals2.hpp>
+#include <string>
+#include "module.hpp"
+
+struct track_info {
+    std::string title;
+    std::string artist;
+};
+
+// Forward declaration
+namespace openmpt {
+    class module;
+}
 
 class player {
 public:
     player();
     ~player();
 
-    bool start_playback(boost::filesystem::path path);
-    bool stop_playback();
-
-    std::vector<boost::filesystem::path> list_songs(boost::filesystem::path dir);
-
-    /**
-     * Retrieve information about the playing song.
-     */
-    std::string get_song_title();
+    void start_playback(std::shared_ptr<openmpt::module> mod);
+    void pause_playback();
+    void stop_playback();
 
     /**
      * Toggle if the player should repeat the song

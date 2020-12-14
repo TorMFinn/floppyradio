@@ -23,6 +23,7 @@ public:
      * When the drive is unmounted, a empty path is returned.
      */
     void set_drive_mounted_callback(drive_mounted_callback callback);
+    void set_drive_unmounted_callback(drive_mounted_callback callback);
 
 private:
     struct Implementation;
