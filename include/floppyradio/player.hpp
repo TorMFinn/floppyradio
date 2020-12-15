@@ -28,6 +28,15 @@ public:
      */
     void set_repeat(bool repeat);
 
+    struct playback_info {
+        std::string track_name;
+        int duration_seconds;
+        int current_position;
+    };
+
+    boost::signals2::signal<void (playback_info info)> on_info;
+    boost::signals2::signal<void ()> on_song_complete;
+
 private:
     struct Implementation;
     std::unique_ptr<Implementation> m_impl;

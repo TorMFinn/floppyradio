@@ -2,6 +2,7 @@
 #include "libopenmpt/libopenmpt.hpp"
 #include "spdlog/spdlog.h"
 #include "SDL2/SDL.h"
+#include <chrono>
 
 constexpr int sample_rate = 48000;
 constexpr int sample_size = 4096;
@@ -52,25 +53,43 @@ struct player::Implementation {
         }
     }
 
+    void update_playback_info(std::shared_ptr<openmpt::module> module) {
+        playback_info info;
+        info.duration_seconds = module->get_duration_seconds();
+        info.current_position = module->get_position_seconds();
+        info.track_name = module->get_metadata("title");
+        parent->on_info(info);
+    }
+
     static void audio_callback(void *userdata, uint8_t *stream, int len) {
-        spdlog::info("Audio callback requested length: {}", len);
+        spdlog::debug("Audio callback requested length: {}", len);
         Implementation* impl = reinterpret_cast<Implementation*>(userdata);
         std::vector<int16_t> interleaved_buffer(sample_size * 2);
         int amount_read = impl->module->read_interleaved_stereo(sample_rate, sample_size,
                                                                 interleaved_buffer.data());
         if (amount_read > 0) {
-            spdlog::info("did read {} bytes from module", amount_read);
+            spdlog::debug("did read {} bytes from module", amount_read);
             SDL_memcpy(stream, reinterpret_cast<void*>(interleaved_buffer.data()),
                        amount_read * 2 * 2);
+            impl->update_playback_info(impl->module);
+        } else if (amount_read == 0) {
+            impl->parent->stop_playback();
+            impl->parent->on_song_complete();
         }
     }
 
     std::shared_ptr<openmpt::module> module;
     SDL_AudioDeviceID audio_device = 0;
+
+    // Do not play tricks with this one!
+    player* parent;
+    std::chrono::time_point<std::chrono::steady_clock> playback_start;
 };
 
 player::player()
-    : m_impl(new Implementation()) {}
+    : m_impl(new Implementation()) {
+    m_impl->parent = this;
+}
 
 player::~player() {
     stop_playback();

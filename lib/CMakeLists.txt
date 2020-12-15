@@ -1,5 +1,6 @@
 add_library(floppyradiolib
   drive_poller.cc
+  drive_mounter.cc
   player.cc
   module_loader.cc
   track_list.cc
@@ -14,6 +15,7 @@ target_link_libraries(floppyradiolib PRIVATE
   ${Boost_LIBRARIES}
   ${BZIP2_LIBRARIES}
   ${portaudio_LIBRARY}
+  ${UDISKS2_LIBRARIES}
   SDL2::SDL2
   spdlog
   pthread
@@ -26,6 +28,7 @@ target_include_directories(floppyradiolib PUBLIC
 target_include_directories(floppyradiolib PRIVATE
   ${libopenmpt_INCLUDE_DIR}
   ${SPDLOG_INCLUDE_DIRS}
+  ${UDISKS2_INCLUDE_DIRS}
   )
 
 #add_dependencies(floppyradiolib build_libopenmpt)

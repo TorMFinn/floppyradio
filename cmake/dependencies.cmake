@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_LIST_DIR}/libopenmpt.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/find_udisks2.cmake)
 
 find_package(Boost REQUIRED COMPONENTS
   filesystem
