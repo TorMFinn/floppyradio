@@ -4,6 +4,7 @@ add_library(floppyradiolib
   player.cc
   module_loader.cc
   track_list.cc
+  ncurses_display.cc
   )
 
 target_compile_options(floppyradiolib PUBLIC
