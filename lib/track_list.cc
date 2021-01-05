@@ -19,10 +19,12 @@ std::vector<boost::filesystem::path> get_track_list(boost::filesystem::path dire
     }
 
     for (auto file : boost::filesystem::directory_iterator(directory)) {
+        auto file_path = file.path();
         std::string extension = file.path().extension().string();
         if (extension == ".bz2") {
             // remove .bz2 part
-            extension.erase(extension.find_last_of(".bz2"));
+            file_path.replace_extension("");
+            extension = file_path.extension().string();
         }
         if (known_extensions.contains(extension)) {
             tracks.push_back(file.path());

@@ -118,8 +118,10 @@ player::player()
     : m_data(new Data()) {
     m_data->mp.on_song_complete.connect([&]() {
         if (m_data->repeat) {
+            spdlog::info("repeat");
             play_song(m_data->current_track);
         } else {
+            spdlog::info("song complete, playing next");
             play_next_song();
         }
     });
@@ -147,14 +149,14 @@ void player::play_song(int track) {
 }
 
 void player::play_next_song() {
-    if (m_data->current_track + 1 <= m_data->tracks.size()) {
-        play_song(m_data->current_track++);
+    if (m_data->current_track + 1 < static_cast<int>(m_data->tracks.size())) {
+        play_song(++m_data->current_track);
     }
 }
 
 void player::play_previous_song() {
     if (m_data->current_track > 0 && !m_data->tracks.empty()) {
-        play_song(m_data->current_track--);
+        play_song(--m_data->current_track);
     }
 }
 

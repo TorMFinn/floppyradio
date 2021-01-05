@@ -18,4 +18,14 @@ target_include_directories(test-module PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   )
 
+add_executable(test-track-list
+  test-track-list.cc
+  )
+
+target_link_libraries(test-track-list
+  GTest::gtest
+  floppyradiolib
+  )
+
 add_test(NAME TestModule COMMAND test-module)
+add_test(NAME TestTrackList COMMAND test-track-list)
