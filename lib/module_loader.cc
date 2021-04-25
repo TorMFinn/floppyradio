@@ -1,5 +1,8 @@
 #include "floppyradio/module_loader.hpp"
+
 #include <libopenmpt/libopenmpt.hpp>
+#include <sidplayfp/SidTune.h>
+
 #include <spdlog/spdlog.h>
 #include <iomanip>
 #include <bzlib.h>
@@ -133,10 +136,16 @@ module_loader::module_loader()
 
 module_loader::~module_loader() = default;
 
-std::shared_ptr<openmpt::module> module_loader::load_from_file(const boost::filesystem::path &path) {
-    auto memory_vector = impl_->load_into_memory(path);
+std::variant<
+    ModulePtr,
+    SidTunePtr> module_loader::load_from_track(const track_t &track) {
+    auto memory_vector = impl_->load_into_memory(track.path);
     if (memory_vector.size() == 0) {
-        return nullptr;
+        return {};
+    }
+
+    if (track.track_type == track_t::type::SID) {
+        return std::make_shared<SidTune>(memory_vector.data(), memory_vector.size());
     } else {
         return std::make_shared<openmpt::module>(memory_vector);
     }

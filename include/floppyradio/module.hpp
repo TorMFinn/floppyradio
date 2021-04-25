@@ -14,6 +14,14 @@ namespace floppyradio {
         module(const boost::filesystem::path &path_to_file);
         ~module();
 
+        enum module_type {
+            MOD,
+            S3M,
+            XM,
+            IT,
+            SID
+        };
+
         /**
          * After the module has been loaded
          * retrieve the raw data
@@ -24,6 +32,8 @@ namespace floppyradio {
          * Retrieve information about the playing song.
          */
         std::string get_song_title();
+
+        module_type get_type();
 
     private:
         struct Impl;

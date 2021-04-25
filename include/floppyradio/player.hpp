@@ -10,11 +10,11 @@ namespace floppyradio {
         player();
         ~player();
 
-        void set_display(display* display);
+        virtual void set_display(display* display);
 
-        void play_song(int track);
-        void play_next_song();
-        void play_previous_song();
+        virtual void play_song(int track);
+        virtual void play_next_song();
+        virtual void play_previous_song();
 
         void stop();
         void pause();

@@ -1,15 +1,9 @@
-#include "floppyradio/sdl_audio_device.hpp"
+#include "floppyradio/audio_device.hpp"
 #include "floppyradio/player.hpp"
 #include "floppyradio/track_list.hpp"
 #include "floppyradio/module_loader.hpp"
 
 #include "libopenmpt/libopenmpt.hpp"
-
-#include "sidplayfp/sidplayfp.h"
-#include "sidplayfp/SidTune.h"
-#include "sidplayfp/SidInfo.h"
-#include "sidplayfp/builders/residfp.h"
-
 #include "spdlog/spdlog.h"
 #include "SDL2/SDL.h"
 #include <chrono>
@@ -20,91 +14,63 @@ constexpr int sample_size = 4096;
 
 using namespace floppyradio;
 
-class SidPlayer {
+class sid_player {
 public:
-    SidPlayer() {
-        // Create the audio device
-        m_audio_dev = std::make_shared<sdl_audio_device>();
-        
-        // Use reSID
-        m_resid = std::make_shared<ReSIDfpBuilder>("floppyradio");
-        m_resid->create(m_engine.info().maxsids());
-
-        // Configure SID engine
-        SidConfig cfg;
-        cfg.frequency = m_audio_dev->get_sample_rate();
-        cfg.samplingMethod = SidConfig::INTERPOLATE;
-        cfg.fastSampling = true;
-        cfg.playback = SidConfig::STEREO;
-        cfg.sidEmulation = m_resid.get();
-
-        if (!m_engine.config(cfg)) {
-            throw std::runtime_error("Failed to configure SID emulation");
-        }
-
-        m_audio_dev->on_audio_wanted([&]() -> audio_device::audio_data {
-            return data_wanted_handler();
-        });
-    }
-
-    void start_playback(std::shared_ptr<SidTune> tune) {
-        // Play the first song
-        if (!tune) {
-            return;
-        }
-
-        if (!tune->getStatus()) {
-            std::cerr << "Tune status is bad?: " << tune->statusString() << std::endl;
-            return;
-        }
-
-        tune->selectSong(0);
-        if (!m_engine.load(tune.get())) {
-            std::cerr << "failed to load tune: " << m_engine.error() << std::endl;
-            return;
-        }
-
-        m_audio_dev->start();
-    }
-
-    audio_device::audio_data data_wanted_handler() {
-        std::vector<int16_t> buffer(m_audio_dev->get_sample_size() * 2);
-        if(m_engine.play(buffer.data(), buffer.size()) > 0) {
-            return buffer;
-        }
-        return {};
+    sid_player() {
     }
 
 private:
-    std::vector<uint8_t> load_rom(const char *path, size_t romSize);
-    sidplayfp m_engine;
-    std::shared_ptr<ReSIDfpBuilder> m_resid;
-
-    // C64 ROM data
-    std::vector<uint8_t> m_kernal, m_basic, m_chargen;
-
-    audio_device_ptr m_audio_dev;
+    audio
+    
 };
 
 class mod_player {
 public:
     mod_player() {
-        m_audio_dev = std::make_shared<sdl_audio_device>();
-        m_audio_dev->on_audio_wanted([&]() -> audio_device::audio_data {
-            return data_wanted_handler();
-        });
+        if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+            throw std::runtime_error("failed to initialize sdl audio");
+        }
+
+        SDL_AudioSpec spec = {};
+        SDL_AudioSpec obtained = {};
+        spec.freq = sample_rate;
+        spec.format = AUDIO_S16;
+        spec.channels = 2;
+        spec.samples = sample_size;
+        spec.userdata = this;
+        spec.callback = audio_callback;
+
+        audio_device = SDL_OpenAudioDevice(nullptr, 0, &spec, &obtained, 0);
+        if (audio_device == 0) {
+            spdlog::error("failed to open audio device: {}", SDL_GetError());
+            return;
+        }
+
+        if (spec.freq != obtained.freq) {
+            std::cerr << "frequeny mismatch" << std::endl;
+        } else if (spec.format != obtained.format) {
+            std::cerr << "format error" << std::endl;
+        } else if (spec.channels != obtained.channels) {
+            std::cerr << "channels mismatch" << std::endl;
+        } else if (spec.samples != obtained.samples) {
+            std::cerr << "sample size mismatch" << std::endl;
+        }
     }
 
-    ~mod_player() = default;
+    ~mod_player() {
+        if (audio_device != 0) {
+            SDL_CloseAudioDevice(audio_device);
+        }
+    }
 
     void start_playback(std::shared_ptr<openmpt::module> mod) {
         module = mod;
         spdlog::info("Starting playback of module {}", mod->get_metadata("title"));
-        m_audio_dev->start();
+        SDL_PauseAudioDevice(audio_device, 0);
     }
 
     void pause_playback() {
-        m_audio_dev->stop();
+        SDL_PauseAudioDevice(audio_device, 1);
     }
 
     void stop_playback() {
@@ -121,30 +87,35 @@ public:
     }
     */
 
-    audio_device::audio_data data_wanted_handler() {
+    static void audio_callback(void *userdata, uint8_t *stream, int len) {
+        spdlog::debug("Audio callback requested length: {}", len);
+        mod_player* mp = reinterpret_cast<mod_player*>(userdata);
         std::vector<int16_t> interleaved_buffer(sample_size * 2);
-        int amount_read = module->read_interleaved_stereo(sample_rate, sample_size,
+        int amount_read = mp->module->read_interleaved_stereo(sample_rate, sample_size,
                                                                 interleaved_buffer.data());
         if (amount_read > 0) {
-            return std::move(interleaved_buffer);
-        } else {
-            // Song is most likely complete
-            stop_playback();
-            on_song_complete();
+            spdlog::debug("did read {} bytes from module", amount_read);
+            SDL_memcpy(stream, reinterpret_cast<void*>(interleaved_buffer.data()),
+                       amount_read * 2 * 2);
+            //mp->update_playback_info(mp->module);
+        } else if (amount_read == 0) {
+            mp->stop_playback();
+            mp->on_song_complete();
         }
-        return {};
     }
 
-
     std::shared_ptr<openmpt::module> module;
-    audio_device_ptr m_audio_dev;
+    SDL_AudioDeviceID audio_device = 0;
+
+    // Do not play tricks with this one!
+    //player* parent;
+    //std::chrono::time_point<std::chrono::steady_clock> playback_start;
 
     boost::signals2::signal<void ()> on_song_complete;
 };
 
 struct player::Data {
     mod_player mp;
-    SidPlayer sid_player;
     module_loader loader;
 
     display* disp;
@@ -181,16 +152,11 @@ void player::play_song(int track) {
         return;
     }
 
-    auto variant = m_data->loader.load_from_track(m_data->tracks[track]);
-    if (std::holds_alternative<SidTunePtr>(variant)) {
-        auto sid_tune = std::get<SidTunePtr>(variant);
-        m_data->sid_player.start_playback(sid_tune);
-    } else {
-        auto module = std::get<ModulePtr>(variant);
+    auto module = m_data->loader.load_from_file(m_data->tracks[track]);
+    if (module) {
         m_data->mp.start_playback(module);
         m_data->current_track = track;
     }
-    m_data->current_track = track;
 }
 
 void player::play_next_song() {

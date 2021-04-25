@@ -13,28 +13,36 @@ void sighandler(int signum) {
     quit = true;
 }
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        std::cerr << "missing input module" << std::endl;
-        return -1;
-    }
-
+struct App {
     floppyradio::drive_mounter mounter;
     floppyradio::player player;
+};
 
-    mounter.set_drive_mounted_callback([&](const boost::filesystem::path &path) {
-        std::cout << "Disk mounted at: " << path.string() << std::endl;
-        int num_tracks = player.open_directory(path);
-        if (num_tracks > 0) {
-            // Start playback
-            player.play_song(0);
-        }
-    });
+void handle_drive_mounted(App &app, const boost::filesystem::path &path) {
+    std::cout << "Disk mounted at: " << path.string() << std::endl;
+    int num_tracks = app.player.open_directory(path);
+    if (num_tracks > 0) {
+        // Start playback
+        app.player.play_song(0);
+    }
+}
 
-    mounter.set_drive_unmounted_callback([&](){
-        std::cout << "disk unmounted" << std::endl;
-        player.close_current_directory();
-    });
+int main(int argc, char **argv) {
+    App app;
+
+    if (argc < 2) {
+        app.mounter.set_drive_mounted_callback([&](const boost::filesystem::path &path) {
+            handle_drive_mounted(app, path);
+        });
+
+        app.mounter.set_drive_unmounted_callback([&](){
+            std::cout << "disk unmounted" << std::endl;
+            app.player.close_current_directory();
+        });
+    } else {
+        // Simulate a drive mount
+        handle_drive_mounted(app, boost::filesystem::path(argv[1]));
+    }
 
     std::signal(SIGTERM, sighandler);
     std::signal(SIGINT, sighandler);
@@ -43,13 +51,13 @@ int main(int argc, char **argv) {
         std::cout << "commands: n (next), p (prev), s (stop), r (repeat), e (exit)\n >> ";
         std::cin >> cmd;
         if (cmd == "n") {
-            player.play_next_song();
+            app.player.play_next_song();
         } else if (cmd == "p") {
-            player.play_previous_song();
+            app.player.play_previous_song();
         } else if (cmd == "s") {
-            player.stop();
+            app.player.stop();
         } else if (cmd == "r") {
-            player.set_repeat(true);
+            app.player.set_repeat(true);
         } else if (cmd == "e") {
             break;
         } else {
