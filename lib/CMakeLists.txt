@@ -7,6 +7,12 @@ add_library(floppyradiolib
   module_loader.cc
   track_list.cc
   ncurses_display.cc
+
+  # New style, again
+  # GLDisplay.cpp
+  Display.cpp
+  SoftDisplay.cpp
+  StarField.cpp
   )
 
 target_compile_options(floppyradiolib PUBLIC
@@ -20,6 +26,7 @@ target_link_libraries(floppyradiolib PRIVATE
   ${BZIP2_LIBRARIES}
   ${portaudio_LIBRARY}
   ${UDISKS2_LIBRARIES}
+  ${GLFW_LIBRARIES}
   SDL2::SDL2
   spdlog
   pthread

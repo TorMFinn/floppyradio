@@ -1,21 +1,16 @@
 #include <iostream>
 #include <thread>
-#include <csignal>
 #include "floppyradio/drive_poller.hpp"
 #include "floppyradio/drive_mounter.hpp"
 #include "floppyradio/module_loader.hpp"
 #include "floppyradio/player.hpp"
 #include "floppyradio/track_list.hpp"
-
-bool quit = false;
-
-void sighandler(int signum) {
-    quit = true;
-}
+#include "floppyradio/SoftDisplay.hpp"
 
 struct App {
     floppyradio::drive_mounter mounter;
     floppyradio::player player;
+    floppyradio::DisplayPtr display;
 };
 
 void handle_drive_mounted(App &app, const boost::filesystem::path &path) {
@@ -29,6 +24,7 @@ void handle_drive_mounted(App &app, const boost::filesystem::path &path) {
 
 int main(int argc, char **argv) {
     App app;
+    app.display = floppyradio::DisplayFactory::Create();
 
     if (argc < 2) {
         app.mounter.set_drive_mounted_callback([&](const boost::filesystem::path &path) {
@@ -44,8 +40,9 @@ int main(int argc, char **argv) {
         handle_drive_mounted(app, boost::filesystem::path(argv[1]));
     }
 
-    std::signal(SIGTERM, sighandler);
-    std::signal(SIGINT, sighandler);
+    app.display->Start();
+
+    /*
     while(not quit) {
         std::string cmd;
         std::cout << "commands: n (next), p (prev), s (stop), r (repeat), e (exit)\n >> ";
@@ -65,6 +62,7 @@ int main(int argc, char **argv) {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    */
 
     return 0;
 }

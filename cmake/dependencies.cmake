@@ -2,6 +2,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/libopenmpt.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/find_udisks2.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/find_spdlog.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/find_libsidplayfp.cmake)
+#include(${CMAKE_CURRENT_LIST_DIR}/find_glfw.cmake)
 
 find_package(Boost REQUIRED COMPONENTS
   filesystem
