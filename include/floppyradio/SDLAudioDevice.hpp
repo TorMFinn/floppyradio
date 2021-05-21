@@ -1,9 +1,9 @@
 #pragma once
-#include "floppyradio/audio_device.hpp"
+#include "floppyradio/AudioDevice.hpp"
 #include <SDL2/SDL.h>
 
 namespace floppyradio {
-    class sdl_audio_device : public audio_device {
+    class sdl_audio_device : public AudioDevice {
     public:
         sdl_audio_device();
         virtual ~sdl_audio_device();

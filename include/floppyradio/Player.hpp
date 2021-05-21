@@ -1,16 +1,16 @@
 #pragma once
 #include <boost/filesystem.hpp>
 #include <string>
-#include "display.hpp"
-#include "module.hpp"
+#include "Display.hpp"
+#include "Module.hpp"
 
 namespace floppyradio {
-    class player {
+    class Player {
     public:
-        player();
-        ~player();
+        Player();
+        ~Player();
 
-        virtual void set_display(display* display);
+        virtual void set_display(Display* display);
 
         virtual void play_song(int track);
         virtual void play_next_song();

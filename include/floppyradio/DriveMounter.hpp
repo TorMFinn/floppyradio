@@ -9,10 +9,10 @@ namespace boost::filesystem {
 }
 
 namespace floppyradio {
-    class drive_mounter {
+    class DriveMounter {
     public:
-        drive_mounter();
-        virtual ~drive_mounter();
+        DriveMounter();
+        virtual ~DriveMounter();
 
         /**
          * Check for presence of media in device specified by serial

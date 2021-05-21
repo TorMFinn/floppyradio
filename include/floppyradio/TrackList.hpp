@@ -14,6 +14,6 @@ namespace floppyradio {
         } track_type;
     };
 
-    using track_list = std::vector<track_t>;
-    track_list get_track_list(boost::filesystem::path directory);
+    using TrackList = std::vector<track_t>;
+    TrackList get_track_list(boost::filesystem::path directory);
 }

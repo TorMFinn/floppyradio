@@ -1,5 +1,5 @@
 #pragma once
-#include "floppyradio/track_list.hpp"
+#include "floppyradio/TrackList.hpp"
 #include <cstdint>
 #include <vector>
 #include <memory>
@@ -20,14 +20,14 @@ using ModulePtr = std::shared_ptr<openmpt::module>;
 using SidTunePtr = std::shared_ptr<SidTune>;
 
 namespace floppyradio {
-    class module_loader {
+    class ModuleLoader {
     public:
-        module_loader();
-        virtual ~module_loader();
+        ModuleLoader();
+        virtual ~ModuleLoader();
 
         std::variant<
             ModulePtr,
-            SidTunePtr> load_from_track(const track_t &track);
+            SidTunePtr> LoadFromTrack(const track_t &track);
 
     private:
         struct Impl;
